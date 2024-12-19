@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transtrack</title>
+    <style>
+        .form-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .form-container label {
+            font-size: 1.2em;
+            color: #333;
+            margin-right: 10px; /* Space between label and input */
+        }
+
+        .form-container input {
+            width: 50%; /* Adjust the width as needed */
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px; /* Space between buttons */
+        }
+
+        .button-container button {
+            padding: 10px 20px;
+            font-size: 1em;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s; /* Add transition for animations */
+        }
+
+        .submit-btn {
+            background-color: #c52222;
+            color: white;
+        }
+
+        .submit-btn:hover {
+            background-color: #a41f1f; /* Darker shade on hover */
+            transform: scale(1.05); /* Slightly increase size on hover */
+        }
+
+        .submit-btn:active {
+            transform: scale(0.95); /* Slightly decrease size on click */
+        }
+
+        .cancel-btn {
+            background-color: #555;
+            color: white;
+        }
+
+        .cancel-btn:hover {
+            background-color: #444; /* Darker shade on hover */
+            transform: scale(1.05); /* Slightly increase size on hover */
+        }
+
+        .cancel-btn:active {
+            transform: scale(0.95); /* Slightly decrease size on click */
+        }
+    </style>
+</head>
+<body style="font-family: Arial, sans-serif;">
+
+    <!-- Transtrack Title -->
+    <div style="text-align: center; margin-top: 20px;">
+        <h1 style="font-size: 2em; color: #333;">TransTRACK</h1>
+        <!-- Display UID -->
+        <p id="uid" style="font-size: 1.2em; color: #333;">No UID Detected!</p>
+        <p id="response" style="font-size: 1.2em; color: green;"></p> <!-- To display server response -->
+    </div>
+
+    <!-- Form Section -->
+    <div style="margin: 50px auto; width: 40vh; border: 1px solid #ccc; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+        <form id="productForm">
+            <!-- Product Name Field -->
+            <div class="form-container">
+                <label for="product-name">Product Name:</label>
+                <input type="text" id="product-name" name="product-name" placeholder="Scan New UID First!" disabled>
+                <input type="hidden" id="newid" name="newid" value="">
+            </div>
+
+            <!-- Button Container -->
+            <div class="button-container">
+                <button type="submit" class="submit-btn" disabled>Submit</button>
+                <button type="button" class="cancel-btn" id="cancelButton">Cancel</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // Fetch UID every 3 seconds
+        setInterval(() => {
+            fetch('/get-uid')
+            .then(response => response.text())  
+            .then(data => {
+                if (data === "0" || data === "") {
+                    document.getElementById('uid').innerText = "No UID Detected!";
+                    document.getElementById('newid').value = "";
+                } else {
+                    document.getElementById('uid').innerText = "Your UID is " + data;
+                    document.getElementById('newid').value = data;
+                }
+                const hasValidUID = (data !== "0" && data !== "");
+                document.getElementById('product-name').disabled = !hasValidUID;
+                document.querySelector('.submit-btn').disabled = !hasValidUID;
+            });
+        }, 3000);
+
+        // Handle form submission
+        document.getElementById('productForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent the default form submission
+
+            const formData = new FormData(this); // Get form data
+
+            // Send the form data to the server
+            fetch('/submit', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.text()) // Get the response from the server
+            .then(data => {
+                document.getElementById('response').innerText = data; // Display the response
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+
+        // Cancel Produk Input
+        document.getElementById('cancelButton').addEventListener('click', function() {
+            document.getElementById('productForm').reset(); // Clear form fields
+            document.getElementById('uid').innerText = "No UID Detected!";
+            fetch('/cancel')
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+    </script>
+
+</body>
+</html>
